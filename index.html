@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>STR Hours Tracker</title>
+<style>
+  :root {
+    --navy: #1B2A4A;
+    --navy-mid: #2E4272;
+    --gold: #C9A84C;
+    --gold-light: #F5EDD5;
+    --surface: #F5F7FA;
+    --card: #FFFFFF;
+    --border: rgba(0,0,0,0.08);
+    --text-primary: #111827;
+    --text-secondary: #6B7280;
+    --text-hint: #9CA3AF;
+    --green: #059669;
+    --green-light: #D1FAE5;
+    --amber: #D97706;
+    --amber-light: #FEF3C7;
+    --red: #DC2626;
+    --red-light: #FEE2E2;
+    --blue: #2563EB;
+    --blue-light: #DBEAFE;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --tab-h: 68px;
+    --header-h: 64px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #0F172A; --card: #1E293B; --border: rgba(255,255,255,0.08);
+      --text-primary: #F1F5F9; --text-secondary: #94A3B8; --text-hint: #475569;
+      --green-light: #064E3B; --amber-light: #451A03; --red-light: #450A0A;
+      --blue-light: #1E3A5F; --gold-light: #2D2410;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--surface); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif; color: var(--text-primary); overflow: hidden; }
+  #app { height: 100%; display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; position: relative; }
+
+  /* ── LICENSE GATE ── */
+  #license-gate {
+    position: fixed; inset: 0; z-index: 1000;
+    background: linear-gradient(160deg, #1B2A4A 0%, #2E4272 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 32px 24px;
+  }
+  #license-gate .lg-logo { font-size: 48px; margin-bottom: 16px; }
+  #license-gate h1 { font-size: 24px; font-weight: 700; color: #fff; text-align: center; letter-spacing: -0.5px; margin-bottom: 6px; }
+  #license-gate .lg-sub { font-size: 14px; color: rgba(255,255,255,0.6); text-align: center; line-height: 1.5; margin-bottom: 32px; }
+  #license-gate .lg-card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 24px; width: 100%; max-width: 340px; }
+  #license-gate .lg-card label { display: block; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  #license-gate .lg-card input {
+    width: 100%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 12px; padding: 14px 16px; font-size: 16px; color: #fff; font-family: 'Courier New', monospace;
+    letter-spacing: 2px; outline: none; text-transform: uppercase; text-align: center;
+  }
+  #license-gate .lg-card input::placeholder { color: rgba(255,255,255,0.25); letter-spacing: 1px; font-size: 14px; text-transform: none; }
+  #license-gate .lg-card input:focus { border-color: var(--gold); background: rgba(255,255,255,0.12); }
+  #license-gate .lg-btn { width: 100%; background: var(--gold); color: #1B2A4A; border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 12px; font-family: inherit; letter-spacing: -0.2px; }
+  #license-gate .lg-btn:active { opacity: 0.85; transform: scale(0.98); }
+  #license-gate .lg-err { font-size: 13px; color: #FCA5A5; text-align: center; margin-top: 10px; min-height: 20px; }
+  #license-gate .lg-footer { margin-top: 24px; font-size: 12px; color: rgba(255,255,255,0.35); text-align: center; line-height: 1.6; }
+  #license-gate .lg-buy { color: var(--gold); text-decoration: none; font-weight: 600; }
+  #license-gate .lg-trial { background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); border-radius: 10px; padding: 10px 20px; font-size: 13px; cursor: pointer; margin-top: 12px; width: 100%; font-family: inherit; }
+  .key-display { font-family: 'Courier New', monospace; font-size: 13px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: var(--gold); letter-spacing: 1px; margin-top: 8px; text-align: center; }
+
+  /* ── HEADER ── */
+  #header { height: var(--header-h); background: var(--navy); display: flex; align-items: center; padding: 0 12px; flex-shrink: 0; gap: 8px; }
+  #header h1 { font-size: 16px; font-weight: 600; color: #fff; letter-spacing: -0.2px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #header .subtitle { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 1px; }
+  .header-btn { background: rgba(255,255,255,0.12); border: none; color: #fff; border-radius: var(--radius-sm); padding: 6px 11px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+  #yr-pill { display: flex; align-items: center; background: rgba(255,255,255,0.12); border-radius: 20px; overflow: hidden; flex-shrink: 0; }
+  #yr-pill button { background: none; border: none; color: rgba(255,255,255,0.8); width: 26px; height: 26px; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  #yr-pill .yn { font-size: 13px; font-weight: 700; color: #fff; min-width: 34px; text-align: center; }
+  #past-bar { background: #FEF3C7; border-bottom: 0.5px solid #D97706; padding: 6px 12px; display: none; align-items: center; gap: 8px; flex-shrink: 0; }
+  #past-bar span { font-size: 11px; color: #92400E; flex: 1; font-weight: 500; }
+  #past-bar button { background: #D97706; color: #fff; border: none; border-radius: 12px; padding: 3px 10px; font-size: 11px; font-weight: 600; cursor: pointer; }
+
+  #screens { flex: 1; overflow: hidden; position: relative; }
+  .screen { position: absolute; inset: 0; overflow-y: auto; padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 16px); display: none; -webkit-overflow-scrolling: touch; }
+  .screen.active { display: block; }
+  #tabs { height: var(--tab-h); background: var(--card); border-top: 0.5px solid var(--border); display: flex; flex-shrink: 0; padding-bottom: var(--safe-bottom); }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: none; background: none; color: var(--text-hint); font-size: 10px; font-weight: 500; cursor: pointer; font-family: inherit; }
+  .tab svg { width: 22px; height: 22px; stroke-width: 1.75; }
+  .tab.active { color: var(--navy); }
+  @media (prefers-color-scheme: dark) { .tab.active { color: var(--gold); } }
+
+  /* ── COMMON ── */
+  .card { background: var(--card); border-radius: var(--radius-lg); border: 0.5px solid var(--border); margin-bottom: 12px; overflow: hidden; }
+  .card-header { padding: 14px 16px 10px; border-bottom: 0.5px solid var(--border); font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+  .row-item { display: flex; align-items: center; padding: 13px 16px; gap: 12px; border-bottom: 0.5px solid var(--border); }
+  .row-item:last-child { border-bottom: none; }
+
+  /* ── FORMS ── */
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+  .field input, .field select, .field textarea { width: 100%; background: var(--card); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; font-size: 15px; color: var(--text-primary); font-family: inherit; outline: none; -webkit-appearance: none; appearance: none; }
+  .field select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 38px; }
+  .field textarea { resize: none; height: 80px; line-height: 1.5; }
+  .hours-stepper { display: flex; align-items: center; background: var(--card); border: 0.5px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+  .hours-stepper button { background: none; border: none; width: 52px; height: 52px; font-size: 22px; color: var(--navy); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  @media (prefers-color-scheme: dark) { .hours-stepper button { color: var(--gold); } }
+  .hours-stepper .hrs-display { flex: 1; text-align: center; font-size: 28px; font-weight: 600; color: var(--text-primary); letter-spacing: -1px; }
+  .hours-stepper .hrs-unit { font-size: 13px; font-weight: 400; color: var(--text-secondary); }
+  .quick-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .quick-btn { background: var(--surface); border: 0.5px solid var(--border); border-radius: 20px; padding: 6px 14px; font-size: 13px; color: var(--text-secondary); cursor: pointer; font-family: inherit; }
+  .btn-primary { width: 100%; background: var(--navy); color: #fff; border: none; border-radius: var(--radius-lg); padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 8px; font-family: inherit; }
+  .btn-primary:active { opacity: 0.85; transform: scale(0.98); }
+  .btn-secondary { width: 100%; background: var(--surface); color: var(--text-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px; font-size: 15px; font-weight: 500; cursor: pointer; margin-top: 8px; font-family: inherit; }
+
+  /* ── DASHBOARD ── */
+  .dash-hero { background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%); padding: 20px 16px 24px; color: #fff; }
+  .dash-hero .year-label { font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500; margin-bottom: 4px; }
+  .dash-hero .total-hrs { font-size: 52px; font-weight: 700; letter-spacing: -3px; line-height: 1; }
+  .dash-hero .total-label { font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+  .dash-hero .loophole-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(201,168,76,0.25); border: 1px solid var(--gold); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--gold); margin-top: 12px; font-weight: 500; }
+  .test-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 16px; padding-bottom: 0; }
+  .test-card { background: var(--card); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 14px; }
+  .test-card .test-name { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 2px; }
+  .test-card .test-num { font-size: 22px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
+  .test-card .test-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .test-card .prog-bar { height: 4px; background: var(--surface); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .test-card .prog-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+  .test-card.met { border-color: var(--green); }
+  .test-card.met .test-num { color: var(--green); }
+  .month-strip { padding: 16px; padding-bottom: 0; }
+  .month-strip h3 { font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 10px; }
+  .months-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .month-cell { background: var(--card); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 8px 4px; text-align: center; }
+  .month-cell .m-label { font-size: 10px; color: var(--text-secondary); font-weight: 500; }
+  .month-cell .m-hrs { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-top: 2px; }
+  .month-cell.has-hours { border-color: #4A6298; background: var(--blue-light); }
+  .month-cell.current { border-color: var(--gold); }
+  .year-history { padding: 16px; padding-bottom: 0; }
+  .year-history h3 { font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 10px; }
+  .yr-row { display: flex; align-items: center; padding: 12px 14px; background: var(--card); border: 0.5px solid var(--border); border-radius: var(--radius-md); margin-bottom: 8px; cursor: pointer; gap: 12px; }
+  .yr-row:active { opacity: 0.75; }
+  .yr-badge { width: 40px; height: 40px; border-radius: var(--radius-sm); background: var(--navy); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .yr-info { flex: 1; }
+  .yr-name { font-size: 15px; font-weight: 600; }
+  .yr-sub { font-size: 12px; color: var(--text-secondary); margin-top: 1px; }
+  .yr-hrs { font-size: 18px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
+  .yr-row.active-yr { border-color: var(--gold); }
+  .yr-row.active-yr .yr-badge { background: var(--gold); }
+
+  /* ── LOG ── */
+  .filter-bar { padding: 10px 16px; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filter-chip { background: var(--card); border: 0.5px solid var(--border); border-radius: 20px; padding: 6px 14px; font-size: 13px; color: var(--text-secondary); cursor: pointer; white-space: nowrap; flex-shrink: 0; font-family: inherit; }
+  .filter-chip.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .log-list { padding: 0 16px; }
+  .log-entry { background: var(--card); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px; position: relative; }
+  .log-entry .entry-date { font-size: 11px; color: var(--text-secondary); font-weight: 500; margin-bottom: 4px; }
+  .log-entry .entry-cat { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .log-entry .entry-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.4; }
+  .log-entry .entry-hrs { position: absolute; top: 14px; right: 14px; font-size: 18px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
+  .log-entry .entry-hrs span { font-size: 11px; font-weight: 400; color: var(--text-secondary); }
+  .log-entry .entry-prop { display: inline-block; background: var(--surface); border-radius: 10px; padding: 2px 8px; font-size: 11px; color: var(--text-secondary); margin-top: 6px; }
+  .log-entry .del-btn { position: absolute; bottom: 12px; right: 14px; background: none; border: none; color: var(--text-hint); cursor: pointer; font-size: 13px; padding: 4px; }
+  .entry-test-badge { display: inline-block; background: var(--green-light); color: var(--green); border-radius: 10px; padding: 2px 8px; font-size: 10px; font-weight: 600; margin-top: 6px; margin-left: 4px; }
+  .empty-state { text-align: center; padding: 48px 24px; }
+  .empty-state h3 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+  .empty-state p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+
+  /* ── REPORTS ── */
+  .report-year-bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--card); border-bottom: 0.5px solid var(--border); }
+  .report-year-bar label { font-size: 13px; color: var(--text-secondary); font-weight: 500; flex: 1; }
+  .report-year-bar select { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 6px 24px 6px 10px; font-size: 13px; color: var(--text-primary); -webkit-appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; font-family: inherit; }
+  .report-section { padding: 16px; padding-bottom: 0; }
+  .report-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .report-type-card { background: var(--card); border: 0.5px solid var(--border); border-radius: var(--radius-md); padding: 16px; cursor: pointer; font-family: inherit; text-align: left; width: 100%; }
+  .report-type-card:active { opacity: 0.8; }
+  .rt-icon { width: 36px; height: 36px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+  .rt-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; color: var(--text-primary); }
+  .rt-sub { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
+  .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 0.5px solid var(--border); }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-label { font-size: 14px; color: var(--text-secondary); }
+  .stat-val { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .pill { display: inline-flex; align-items: center; border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 600; }
+  .pill-green { background: var(--green-light); color: var(--green); }
+  .pill-amber { background: var(--amber-light); color: var(--amber); }
+
+  /* ── MODALS ── */
+  #add-modal, #report-modal { position: fixed; inset: 0; z-index: 100; display: none; flex-direction: column; justify-content: flex-end; }
+  #add-modal.open, #report-modal.open { display: flex; }
+  .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
+  .modal-sheet { position: relative; background: var(--surface); border-radius: 20px 20px 0 0; max-height: 92vh; overflow-y: auto; padding: 0 16px calc(32px + var(--safe-bottom)); }
+  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 16px; }
+  .modal-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 20px; }
+  .cat-grid { display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto; }
+  .cat-item { background: var(--card); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 11px 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+  .cat-item.selected { border-color: var(--navy); background: var(--blue-light); }
+  .cat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .cat-name { font-size: 13px; color: var(--text-primary); line-height: 1.3; }
+  .cat-item.selected .cat-name { color: var(--navy); font-weight: 500; }
+  .report-content { font-family: 'Courier New', monospace; font-size: 11px; color: var(--text-primary); background: var(--card); border-radius: var(--radius-md); padding: 14px; white-space: pre-wrap; line-height: 1.6; max-height: 50vh; overflow-y: auto; border: 0.5px solid var(--border); }
+  .dl-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: var(--navy); color: #fff; border: none; border-radius: var(--radius-lg); padding: 16px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 12px; font-family: inherit; }
+
+  /* ── LICENSE STATUS BADGE in settings ── */
+  .license-badge { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 0.5px solid var(--border); }
+  .license-badge .lb-icon { width: 36px; height: 36px; border-radius: 50%; background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .license-badge .lb-info { flex: 1; }
+  .license-badge .lb-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .license-badge .lb-key { font-size: 11px; color: var(--text-secondary); font-family: 'Courier New', monospace; letter-spacing: 1px; margin-top: 2px; }
+  .license-badge .lb-revoke { background: none; border: none; color: var(--red); font-size: 12px; cursor: pointer; font-family: inherit; }
+  .info-box { background: var(--gold-light); border-left: 3px solid var(--gold); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; padding: 10px 12px; font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px; }
+
+  /* ── TOAST ── */
+  #toast { position: fixed; bottom: calc(var(--tab-h) + 16px); left: 50%; transform: translateX(-50%) translateY(20px); background: #111827; color: #fff; border-radius: 20px; padding: 10px 20px; font-size: 14px; font-weight: 500; opacity: 0; transition: all 0.25s; pointer-events: none; white-space: nowrap; z-index: 300; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- LICENSE GATE -->
+  <div id="license-gate">
+    <div class="lg-logo">🏠</div>
+    <h1>STR Hours Tracker</h1>
+    <p class="lg-sub">Professional material participation tracking<br>for short-term rental operators</p>
+    <div class="lg-card">
+      <label>Enter Your License Key</label>
+      <input type="text" id="lg-input" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19" oninput="formatKey(this)" onkeydown="if(event.key==='Enter')activateLicense()">
+      <div class="lg-err" id="lg-err"></div>
+      <button class="lg-btn" onclick="activateLicense()">Activate License</button>
+      <button class="lg-trial" onclick="startTrial()">Try Free — 7-day trial (no key needed)</button>
+    </div>
+    <div class="lg-footer">
+      Don't have a key? <a class="lg-buy" href="https://gumroad.com" target="_blank">Purchase at gumroad.com/strtracker</a><br>
+      $49/year or $99 lifetime · Your data stays private
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <div id="header">
+    <div style="flex:1;min-width:0">
+      <div class="subtitle">STR HOURS TRACKER</div>
+      <h1 id="header-title">Dashboard</h1>
+    </div>
+    <div id="yr-pill">
+      <button onclick="shiftYear(-1)">&#8249;</button>
+      <div class="yn" id="pill-year">2025</div>
+      <button onclick="shiftYear(1)">&#8250;</button>
+    </div>
+    <button class="header-btn" id="add-btn" onclick="openAdd()">+ Log</button>
+  </div>
+  <div id="past-bar">
+    <span id="past-msg"></span>
+    <button onclick="goNow()">Go to <span id="past-cur"></span></button>
+  </div>
+
+  <!-- SCREENS -->
+  <div id="screens">
+
+    <!-- DASHBOARD -->
+    <div class="screen active" id="screen-dashboard">
+      <div class="dash-hero">
+        <div class="year-label" id="dash-year-label">TOTAL HOURS — 2025</div>
+        <div class="total-hrs" id="hero-total">0.0</div>
+        <div class="total-label">qualifying hours across all activities</div>
+        <div id="loophole-badge" class="loophole-badge" style="display:none">&#10003; STR Loophole Active</div>
+      </div>
+      <div class="test-grid">
+        <div class="test-card" id="tc-test1"><div class="test-name">Test 1</div><div class="test-num" id="td-test1">0 / 500</div><div class="test-sub">500+ hours</div><div class="prog-bar"><div class="prog-fill" id="pf-test1" style="width:0%;background:#2E4272"></div></div></div>
+        <div class="test-card" id="tc-test3"><div class="test-name">Test 3</div><div class="test-num" id="td-test3">0 / 100</div><div class="test-sub">100+ hrs, most of anyone</div><div class="prog-bar"><div class="prog-fill" id="pf-test3" style="width:0%;background:#2E4272"></div></div></div>
+        <div class="test-card" id="tc-qbi"><div class="test-name">QBI Safe Harbor</div><div class="test-num" id="td-qbi">0 / 250</div><div class="test-sub">250 hrs — 20% deduction</div><div class="prog-bar"><div class="prog-fill" id="pf-qbi" style="width:0%;background:#D97706"></div></div></div>
+        <div class="test-card" id="tc-reps"><div class="test-name">REPS Status</div><div class="test-num" id="td-reps">0 / 750</div><div class="test-sub">Real estate professional</div><div class="prog-bar"><div class="prog-fill" id="pf-reps" style="width:0%;background:#2563EB"></div></div></div>
+      </div>
+      <div class="month-strip" style="padding-top:16px">
+        <h3>Monthly Breakdown</h3>
+        <div class="months-grid" id="months-grid"></div>
+      </div>
+      <div style="padding:16px;padding-bottom:0">
+        <div class="card"><div class="card-header">Hours by Category</div><div id="cat-breakdown"></div></div>
+      </div>
+      <div class="year-history">
+        <h3>All Years</h3>
+        <div id="all-years-list"></div>
+      </div>
+      <div style="padding:12px 16px 0"><div class="info-box"><strong>STR Loophole:</strong> Avg guest stay &#8804;7 days + meet any 1 of 7 IRS tests = losses offset W-2 income (IRC &#167;469).</div></div>
+    </div>
+
+    <!-- LOG -->
+    <div class="screen" id="screen-log">
+      <div class="filter-bar">
+        <button class="filter-chip active" onclick="setFilter('all',this)">All</button>
+        <button class="filter-chip" onclick="setFilter('today',this)">Today</button>
+        <button class="filter-chip" onclick="setFilter('week',this)">This Week</button>
+        <button class="filter-chip" onclick="setFilter('month',this)">This Month</button>
+      </div>
+      <div class="log-list" id="log-list"></div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="screen" id="screen-reports">
+      <div class="report-year-bar">
+        <label>Report year</label>
+        <select id="report-year-sel" onchange="renderReports()"></select>
+      </div>
+      <div class="report-section">
+        <div class="card" style="margin-bottom:16px"><div class="card-header" id="annual-title">Annual Summary</div><div style="padding:0 16px" id="annual-stats"></div></div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:10px">Download Reports</div>
+        <div class="report-type-grid">
+          <button class="report-type-card" onclick="generateReport('monthly')"><div class="rt-icon" style="background:var(--blue-light)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.75"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><div class="rt-title">Monthly Report</div><div class="rt-sub">Hours by month — CSV</div></button>
+          <button class="report-type-card" onclick="generateReport('annual')"><div class="rt-icon" style="background:var(--green-light)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.75"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg></div><div class="rt-title">Annual Tax Report</div><div class="rt-sub">Full year for CPA</div></button>
+          <button class="report-type-card" onclick="generateReport('audit')"><div class="rt-icon" style="background:var(--amber-light)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="1.75"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div class="rt-title">Audit Defense</div><div class="rt-sub">IRS-ready log</div></button>
+          <button class="report-type-card" onclick="generateReport('category')"><div class="rt-icon" style="background:var(--gold-light)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div><div class="rt-title">Category Summary</div><div class="rt-sub">Hours per activity</div></button>
+        </div>
+        <div class="card" style="margin-top:16px"><div class="card-header">IRS Test Status</div><div style="padding:0 16px" id="test-status-list"></div></div>
+      </div>
+    </div>
+
+    <!-- REFERENCE / SETTINGS -->
+    <div class="screen" id="screen-ref">
+      <div style="padding:16px;padding-bottom:0">
+
+        <!-- License status -->
+        <div class="card" id="license-status-card">
+          <div class="card-header">License</div>
+          <div id="license-status-body"></div>
+        </div>
+
+        <div class="card"><div class="card-header">Properties</div><div id="prop-list"></div>
+          <div style="padding:12px 16px;display:flex;gap:8px">
+            <input id="new-prop" placeholder="Add property name…" style="flex:1;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;color:var(--text-primary);outline:none">
+            <button onclick="addProperty()" style="background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Add</button>
+          </div>
+        </div>
+
+        <div class="card"><div class="card-header">The 7 IRS Tests (Temp. Reg. 1.469-5T)</div><div id="seven-tests"></div></div>
+        <div class="card"><div class="card-header">Qualifying Activity Guide</div><div id="activity-ref"></div></div>
+        <div style="padding:8px 0 16px;text-align:center;font-size:11px;color:var(--text-hint);line-height:1.6">IRC &#167;469 · Temp. Treas. Reg. 1.469-5T · IRS Pub. 925<br>Consult a CPA for your specific situation</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div id="tabs">
+    <button class="tab active" onclick="switchTab('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</button>
+    <button class="tab" onclick="switchTab('log',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Log</button>
+    <button class="tab" onclick="switchTab('reports',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Reports</button>
+    <button class="tab" onclick="switchTab('ref',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>Reference</button>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div id="add-modal">
+  <div class="modal-backdrop" onclick="closeAdd()"></div>
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Log Activity</div>
+    <div class="field"><label>Date</label><input type="date" id="f-date"></div>
+    <div class="field"><label>Property</label><select id="f-prop"><option value="">Select property…</option></select></div>
+    <div class="field"><label>Activity Category</label><div class="cat-grid" id="cat-picker"></div></div>
+    <div class="field" style="margin-top:12px"><label>Hours Spent</label>
+      <div class="hours-stepper"><button onclick="adjustHours(-0.5)">&#8722;</button><div class="hrs-display"><span id="hrs-val">1.0</span> <span class="hrs-unit">hrs</span></div><button onclick="adjustHours(0.5)">+</button></div>
+      <div class="quick-btns"><button class="quick-btn" onclick="setHours(0.5)">30 min</button><button class="quick-btn" onclick="setHours(1)">1 hr</button><button class="quick-btn" onclick="setHours(2)">2 hrs</button><button class="quick-btn" onclick="setHours(3)">3 hrs</button><button class="quick-btn" onclick="setHours(4)">4 hrs</button><button class="quick-btn" onclick="setHours(8)">8 hrs</button></div>
+    </div>
+    <div class="field"><label>Description <span style="color:var(--text-hint);font-weight:400;text-transform:none">(be specific — IRS audit trail)</span></label><textarea id="f-desc" placeholder="e.g. Responded to 3 guest inquiries, coordinated cleaner for Booking #1847…"></textarea></div>
+    <div class="field"><label>IRS Test</label>
+      <select id="f-test">
+        <option value="Test 1 — 500+ Hours">Test 1 — 500+ Hours (most common)</option>
+        <option value="Test 3 — 100+ Hrs / Most of Anyone">Test 3 — 100+ Hrs, most of anyone</option>
+        <option value="QBI Safe Harbor">QBI Safe Harbor (250-hr rule)</option>
+        <option value="REPS — 750 Hours">REPS — 750 Hours</option>
+        <option value="All Tests">All applicable tests</option>
+      </select>
+    </div>
+    <div class="field"><label>Evidence Notes</label><input type="text" id="f-evidence" placeholder="e.g. Email thread saved, Airbnb screenshot…"></div>
+    <button class="btn-primary" onclick="saveEntry()">Save Entry</button>
+    <button class="btn-secondary" onclick="closeAdd()">Cancel</button>
+  </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div id="report-modal">
+  <div class="modal-backdrop" onclick="closeReport()"></div>
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="report-title">Report</div>
+    <div class="report-content" id="report-content"></div>
+    <button class="dl-btn" onclick="downloadReport()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download CSV</button>
+    <button class="btn-secondary" onclick="closeReport()">Close</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// LICENSE SYSTEM
+// ═══════════════════════════════════════════════════════
+// HOW IT WORKS:
+// 1. Keys are generated using a shared secret + a salt
+// 2. The app validates keys without a server (offline-capable)
+// 3. Each key is unique and tied to a salt you generate per customer
+// 4. To generate keys for customers, use the admin tool (admin.html)
+//
+// SECURITY NOTE: This is client-side validation — determined hackers
+// CAN reverse-engineer it. For true security, use Supabase/Firebase auth.
+// This is ideal for low-volume sales ($5-$29 products) where the honor
+// system + friction is sufficient protection.
+// ═══════════════════════════════════════════════════════
+
+const APP_SECRET = 'STR-TRACKER-2025-FRANK'; // CHANGE THIS to something unique to you
+const TRIAL_DAYS = 7;
+
+function hashCode(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function generateKey(salt) {
+  const raw = APP_SECRET + '-' + salt;
+  const h = hashCode(raw).toString(36).toUpperCase().padStart(8, '0');
+  const p1 = h.slice(0, 4);
+  const p2 = h.slice(4, 8);
+  const p3 = hashCode(raw + 'B').toString(36).toUpperCase().padStart(4, '0').slice(0, 4);
+  const p4 = hashCode(raw + 'C').toString(36).toUpperCase().padStart(4, '0').slice(0, 4);
+  return `${p1}-${p2}-${p3}-${p4}`;
+}
+
+function validateKey(key) {
+  const cleaned = key.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (cleaned.length < 16) return false;
+  // Try common salts (customer IDs 1–9999)
+  // In production you'd have a smarter validation, but this works for small volumes
+  for (let i = 1; i <= 9999; i++) {
+    const valid = generateKey(String(i)).replace(/-/g, '');
+    if (valid === cleaned) return true;
+  }
+  return false;
+}
+
+function formatKey(input) {
+  let val = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (val.length > 4) val = val.slice(0,4) + '-' + val.slice(4);
+  if (val.length > 9) val = val.slice(0,9) + '-' + val.slice(9);
+  if (val.length > 14) val = val.slice(0,14) + '-' + val.slice(14);
+  input.value = val.slice(0, 19);
+}
+
+function activateLicense() {
+  const key = document.getElementById('lg-input').value.trim();
+  const errEl = document.getElementById('lg-err');
+  if (!key) { errEl.textContent = 'Please enter your license key.'; return; }
+  errEl.textContent = 'Validating…';
+  // Small delay for UX
+  setTimeout(() => {
+    if (validateKey(key)) {
+      localStorage.setItem('str_license_key', key.toUpperCase());
+      localStorage.setItem('str_license_type', 'full');
+      localStorage.removeItem('str_trial_start');
+      hideLicenseGate();
+      showToast('License activated! Welcome.');
+      renderLicenseStatus();
+    } else {
+      errEl.textContent = '❌ Invalid key. Check your purchase email and try again.';
+    }
+  }, 600);
+}
+
+function startTrial() {
+  const existing = localStorage.getItem('str_trial_start');
+  if (!existing) {
+    localStorage.setItem('str_trial_start', Date.now().toString());
+    localStorage.setItem('str_license_type', 'trial');
+  }
+  const trialStart = parseInt(localStorage.getItem('str_trial_start') || Date.now());
+  const daysUsed = (Date.now() - trialStart) / (1000 * 60 * 60 * 24);
+  if (daysUsed > TRIAL_DAYS) {
+    document.getElementById('lg-err').textContent = `Trial expired ${Math.floor(daysUsed - TRIAL_DAYS)} days ago. Purchase a license to continue.`;
+    return;
+  }
+  hideLicenseGate();
+  const daysLeft = Math.ceil(TRIAL_DAYS - daysUsed);
+  showToast(`Trial active — ${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining`);
+  renderLicenseStatus();
+}
+
+function checkLicenseOnLoad() {
+  const type = localStorage.getItem('str_license_type');
+  const key = localStorage.getItem('str_license_key');
+  if (type === 'full' && key) { hideLicenseGate(); return; }
+  if (type === 'trial') {
+    const trialStart = parseInt(localStorage.getItem('str_trial_start') || '0');
+    const daysUsed = (Date.now() - trialStart) / (1000 * 60 * 60 * 24);
+    if (daysUsed <= TRIAL_DAYS) { hideLicenseGate(); return; }
+  }
+  // Show gate
+  document.getElementById('license-gate').style.display = 'flex';
+}
+
+function hideLicenseGate() {
+  document.getElementById('license-gate').style.display = 'none';
+}
+
+function renderLicenseStatus() {
+  const type = localStorage.getItem('str_license_type');
+  const key = localStorage.getItem('str_license_key');
+  const el = document.getElementById('license-status-body');
+  if (type === 'full' && key) {
+    el.innerHTML = `<div class="license-badge">
+      <div class="lb-icon">✅</div>
+      <div class="lb-info">
+        <div class="lb-title">Full License — Active</div>
+        <div class="lb-key">${key}</div>
+      </div>
+      <button class="lb-revoke" onclick="revokeLicense()">Remove</button>
+    </div>`;
+  } else if (type === 'trial') {
+    const trialStart = parseInt(localStorage.getItem('str_trial_start') || '0');
+    const daysUsed = (Date.now() - trialStart) / (1000 * 60 * 60 * 24);
+    const daysLeft = Math.max(0, Math.ceil(TRIAL_DAYS - daysUsed));
+    el.innerHTML = `<div class="license-badge">
+      <div class="lb-icon">⏳</div>
+      <div class="lb-info">
+        <div class="lb-title">Trial — ${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining</div>
+        <div class="lb-key">Enter a license key to unlock permanently</div>
+      </div>
+    </div>
+    <div style="padding:12px 16px">
+      <div style="display:flex;gap:8px">
+        <input id="upgrade-key" placeholder="XXXX-XXXX-XXXX-XXXX" oninput="formatKey(this)" style="flex:1;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;color:var(--text-primary);outline:none;font-family:'Courier New',monospace;letter-spacing:1px;text-transform:uppercase" maxlength="19">
+        <button onclick="upgradeFromSettings()" style="background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Activate</button>
+      </div>
+    </div>`;
+  }
+}
+
+function upgradeFromSettings() {
+  const key = document.getElementById('upgrade-key').value.trim();
+  if (!key) return;
+  if (validateKey(key)) {
+    localStorage.setItem('str_license_key', key.toUpperCase());
+    localStorage.setItem('str_license_type', 'full');
+    localStorage.removeItem('str_trial_start');
+    showToast('License activated!');
+    renderLicenseStatus();
+  } else {
+    showToast('Invalid license key');
+  }
+}
+
+function revokeLicense() {
+  if (!confirm('Remove license from this device? You can re-enter it anytime.')) return;
+  localStorage.removeItem('str_license_key');
+  localStorage.removeItem('str_license_type');
+  localStorage.removeItem('str_trial_start');
+  location.reload();
+}
+
+// ═══════════════════════════════════════════════════════
+// APP DATA
+// ═══════════════════════════════════════════════════════
+const CATEGORIES = [
+  { name: "Guest Communication — Inquiries & Messages", group: "Guest Comm", color: "#2563EB" },
+  { name: "Guest Communication — Check-in / Check-out", group: "Guest Comm", color: "#2563EB" },
+  { name: "Guest Communication — Issue Resolution", group: "Guest Comm", color: "#2563EB" },
+  { name: "Booking & Reservation Management", group: "Booking", color: "#7C3AED" },
+  { name: "Listing Management — Create/Update/Optimize", group: "Booking", color: "#7C3AED" },
+  { name: "Platform Administration (Airbnb/VRBO settings)", group: "Booking", color: "#7C3AED" },
+  { name: "Pricing & Revenue Management", group: "Booking", color: "#7C3AED" },
+  { name: "Cleaning & Turnover — Personal Performance", group: "Cleaning", color: "#059669" },
+  { name: "Cleaning & Turnover — Coordination & Oversight", group: "Cleaning", color: "#059669" },
+  { name: "Maintenance & Repairs — Personal Performance", group: "Maintenance", color: "#D97706" },
+  { name: "Maintenance & Repairs — Coordination & Oversight", group: "Maintenance", color: "#D97706" },
+  { name: "Vendor / Contractor Oversight", group: "Maintenance", color: "#D97706" },
+  { name: "Supply & Inventory Management (Purchasing)", group: "Operations", color: "#0891B2" },
+  { name: "Utility & Service Coordination", group: "Operations", color: "#0891B2" },
+  { name: "Key Exchange & Access Management", group: "Operations", color: "#0891B2" },
+  { name: "Safety Compliance (Fire, CO2, First Aid checks)", group: "Operations", color: "#0891B2" },
+  { name: "Staging, Furnishing & Property Setup", group: "Operations", color: "#0891B2" },
+  { name: "Property Inspection & Walk-Through", group: "Operations", color: "#0891B2" },
+  { name: "Marketing — Photography / Social Media / Ads", group: "Marketing", color: "#DB2777" },
+  { name: "Photography / Virtual Tour Updates", group: "Marketing", color: "#DB2777" },
+  { name: "Bookkeeping & Financial Record Keeping", group: "Finance", color: "#1B2A4A" },
+  { name: "Tax Planning & Research (STR-specific)", group: "Finance", color: "#1B2A4A" },
+  { name: "Legal & Compliance (Permits, HOA, Local Laws)", group: "Finance", color: "#1B2A4A" },
+  { name: "Insurance Review & Claims", group: "Finance", color: "#1B2A4A" },
+  { name: "Renovation / Capital Improvement Oversight", group: "Strategic", color: "#92400E" },
+  { name: "Strategic Planning & Market Research", group: "Strategic", color: "#92400E" },
+  { name: "Dispute Resolution (Chargebacks, Reviews)", group: "Strategic", color: "#92400E" },
+  { name: "Community & Neighborhood Management", group: "Strategic", color: "#92400E" },
+];
+
+const SEVEN_TESTS = [
+  { num:1, name:"500-Hour Test", req:"Participate more than 500 hours during the tax year.", threshold:500, ref:"Temp. Reg. 1.469-5T(a)(1)" },
+  { num:2, name:"Substantially All", req:"Your participation is substantially all participation by all individuals.", threshold:null, ref:"Temp. Reg. 1.469-5T(a)(2)" },
+  { num:3, name:"100 Hrs + Most of Anyone", req:"Participate 100+ hours AND no other individual participates more than you (incl. cleaners/PMs).", threshold:100, ref:"Temp. Reg. 1.469-5T(a)(3)" },
+  { num:4, name:"SPA 500-Hr Combined", req:"Multiple significant participation activities each over 100 hrs; combined total exceeds 500 hrs.", threshold:500, ref:"Temp. Reg. 1.469-5T(a)(4)" },
+  { num:5, name:"5 of Prior 10 Years", req:"Materially participated in this activity in any 5 of the prior 10 tax years.", threshold:null, ref:"Temp. Reg. 1.469-5T(a)(5)" },
+  { num:6, name:"Personal Services — 3 Years", req:"Personal service activity with material participation in any 3 prior years.", threshold:null, ref:"Temp. Reg. 1.469-5T(a)(6)" },
+  { num:7, name:"Regular, Continuous & Substantial", req:"Facts-and-circumstances test: participation is regular, continuous, and substantial.", threshold:100, ref:"Temp. Reg. 1.469-5T(a)(7)" },
+];
+
+const ACTIVITY_REF = [
+  { activity:"Guest communication (messages, check-in, issues)", counts:true, tip:"Save email/Airbnb/text threads" },
+  { activity:"Booking & reservation management", counts:true, tip:"Export booking history monthly" },
+  { activity:"Listing creation, updates, optimization", counts:true, tip:"Screenshot edits with date visible" },
+  { activity:"Dynamic pricing & revenue management", counts:true, tip:"Save pricing tool reports" },
+  { activity:"Cleaning/turnover — personal performance", counts:true, tip:"Log exact hours per booking" },
+  { activity:"Cleaning/turnover — coordinating cleaners", counts:true, tip:"Save coordination texts/emails" },
+  { activity:"Maintenance & repairs — personal", counts:true, tip:"Photo evidence + receipts" },
+  { activity:"Maintenance — contractor coordination", counts:true, tip:"Keep invoices and oversight logs" },
+  { activity:"Supply & inventory purchasing", counts:true, tip:"Receipts + time log" },
+  { activity:"Staging, furnishing, property setup", counts:true, tip:"Before/after photos + receipts" },
+  { activity:"Bookkeeping & financial records", counts:true, tip:"Accounting software timestamps" },
+  { activity:"Tax planning (STR-specific)", counts:true, tip:"Log time; save research notes" },
+  { activity:"Legal & compliance (permits, local laws)", counts:true, tip:"Save all correspondence" },
+  { activity:"Property inspections & walk-throughs", counts:true, tip:"Photo timestamps + checklist" },
+  { activity:"Renovation & capital improvement oversight", counts:true, tip:"Contractor invoices + site logs" },
+  { activity:"Reviewing financial statements (passive)", counts:false, tip:"Do NOT count — investor activity" },
+  { activity:"General real estate education/seminars", counts:false, tip:"Do NOT count — investor activity" },
+  { activity:"Reading STR industry news", counts:false, tip:"Do NOT count — investor activity" },
+];
+
+// ── STATE ──────────────────────────────────────────────
+const THIS_YEAR = new Date().getFullYear();
+let activeYear = THIS_YEAR;
+let years = JSON.parse(localStorage.getItem('str_years') || 'null') || [2025];
+if (!years.includes(THIS_YEAR)) { years.push(THIS_YEAR); years.sort(); }
+let properties = JSON.parse(localStorage.getItem('str_props') || '["Property 1"]');
+let currentHours = 1.0;
+let selectedCat = '';
+let currentFilter = 'all';
+let currentReportType = '';
+let currentReportCSV = '';
+
+function getEntries(yr) { return JSON.parse(localStorage.getItem('str_entries_' + (yr || activeYear)) || '[]'); }
+function setEntries(arr, yr) { localStorage.setItem('str_entries_' + (yr || activeYear), JSON.stringify(arr)); }
+function saveYears() { localStorage.setItem('str_years', JSON.stringify(years)); }
+function totalHoursForYear(yr) { return getEntries(yr).reduce((s, e) => s + e.hours, 0); }
+
+// ── INIT ──────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  checkLicenseOnLoad();
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  buildCatPicker(); buildPropSelect(); buildPropList(); buildSevenTests(); buildActivityRef();
+  syncYearUI(); renderDashboard(); renderLog(); renderReports(); populateReportYearSel();
+  renderLicenseStatus();
+});
+
+// ── YEAR MANAGEMENT ───────────────────────────────────
+function syncYearUI() {
+  document.getElementById('pill-year').textContent = activeYear;
+  const isPast = activeYear !== THIS_YEAR;
+  document.getElementById('past-bar').style.display = isPast ? 'flex' : 'none';
+  if (isPast) { document.getElementById('past-msg').textContent = 'Viewing ' + activeYear + ' — read-only'; document.getElementById('past-cur').textContent = THIS_YEAR; }
+  document.getElementById('add-btn').style.display = isPast ? 'none' : '';
+}
+function shiftYear(delta) { const i = years.indexOf(activeYear); const ni = i + delta; if (ni < 0 || ni >= years.length) return; activeYear = years[ni]; syncYearUI(); renderDashboard(); renderLog(); populateReportYearSel(); }
+function goNow() { activeYear = THIS_YEAR; syncYearUI(); renderDashboard(); renderLog(); populateReportYearSel(); }
+function selectYear(yr) { activeYear = yr; syncYearUI(); renderDashboard(); renderLog(); populateReportYearSel(); }
+function populateReportYearSel() {
+  const sel = document.getElementById('report-year-sel');
+  const cur = sel.value ? parseInt(sel.value) : activeYear;
+  sel.innerHTML = [...years].reverse().map(yr => `<option value="${yr}" ${yr === cur ? 'selected' : ''}>${yr}</option>`).join('');
+  renderReports();
+}
+
+// ── TAB SWITCH ────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  el.classList.add('active');
+  const titles = { dashboard: 'Dashboard', log: 'Activity Log', reports: 'Reports', ref: 'Settings & Reference' };
+  document.getElementById('header-title').textContent = titles[name];
+  document.getElementById('add-btn').style.display = (name !== 'ref' && activeYear === THIS_YEAR) ? '' : 'none';
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'log') renderLog();
+  if (name === 'reports') renderReports();
+}
+
+// ── HOURS STEPPER ─────────────────────────────────────
+function adjustHours(d) { currentHours = Math.max(0.5, Math.min(24, Math.round((currentHours + d) * 10) / 10)); document.getElementById('hrs-val').textContent = currentHours.toFixed(1); }
+function setHours(h) { currentHours = h; document.getElementById('hrs-val').textContent = h.toFixed(1); }
+
+// ── CATEGORY PICKER ───────────────────────────────────
+function buildCatPicker() {
+  document.getElementById('cat-picker').innerHTML = CATEGORIES.map(c =>
+    `<div class="cat-item" onclick="selectCat(this,'${c.name.replace(/'/g, "\\'")}')"><div class="cat-dot" style="background:${c.color}"></div><div class="cat-name">${c.name}</div></div>`
+  ).join('');
+}
+function selectCat(el, name) { document.querySelectorAll('.cat-item').forEach(i => i.classList.remove('selected')); el.classList.add('selected'); selectedCat = name; }
+
+// ── PROPERTY ──────────────────────────────────────────
+function buildPropSelect() { document.getElementById('f-prop').innerHTML = '<option value="">Select property…</option>' + properties.map(p => `<option value="${p}">${p}</option>`).join(''); }
+function buildPropList() { document.getElementById('prop-list').innerHTML = properties.map((p, i) => `<div class="row-item"><div style="flex:1;font-size:15px">${p}</div>${properties.length > 1 ? `<button onclick="removeProp(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;font-family:inherit">Remove</button>` : ''}</div>`).join(''); }
+function addProperty() { const v = document.getElementById('new-prop').value.trim(); if (!v) return; properties.push(v); document.getElementById('new-prop').value = ''; localStorage.setItem('str_props', JSON.stringify(properties)); buildPropSelect(); buildPropList(); showToast('Property added'); }
+function removeProp(i) { properties.splice(i, 1); localStorage.setItem('str_props', JSON.stringify(properties)); buildPropSelect(); buildPropList(); }
+
+// ── ADD ENTRY ─────────────────────────────────────────
+function openAdd() { document.getElementById('add-modal').classList.add('open'); }
+function closeAdd() { document.getElementById('add-modal').classList.remove('open'); }
+function saveEntry() {
+  const date = document.getElementById('f-date').value;
+  const prop = document.getElementById('f-prop').value;
+  const desc = document.getElementById('f-desc').value.trim();
+  const test = document.getElementById('f-test').value;
+  const evidence = document.getElementById('f-evidence').value.trim();
+  if (!date) { showToast('Select a date'); return; }
+  if (!selectedCat) { showToast('Select an activity category'); return; }
+  if (!prop) { showToast('Select a property'); return; }
+  const eYr = new Date(date + 'T12:00:00').getFullYear();
+  if (!years.includes(eYr)) { years.push(eYr); years.sort(); saveYears(); populateReportYearSel(); }
+  const arr = getEntries(eYr);
+  arr.unshift({ id: Date.now(), date, prop, cat: selectedCat, hours: currentHours, desc, test, evidence, ts: new Date().toISOString() });
+  setEntries(arr, eYr);
+  closeAdd();
+  showToast(currentHours.toFixed(1) + ' hrs saved');
+  selectedCat = ''; document.querySelectorAll('.cat-item').forEach(i => i.classList.remove('selected'));
+  setHours(1); document.getElementById('f-desc').value = ''; document.getElementById('f-evidence').value = '';
+  renderDashboard(); renderLog(); renderReports();
+}
+
+// ── DASHBOARD ─────────────────────────────────────────
+function renderDashboard() {
+  const entries = getEntries(activeYear);
+  const total = entries.reduce((s, e) => s + e.hours, 0);
+  const cm = new Date().getMonth();
+  document.getElementById('dash-year-label').textContent = 'TOTAL HOURS — ' + activeYear;
+  document.getElementById('hero-total').textContent = total.toFixed(1);
+  document.getElementById('loophole-badge').style.display = total >= 100 ? 'inline-flex' : 'none';
+  [{ id:'test1', th:500, color:'#2E4272' }, { id:'test3', th:100, color:'#2E4272' }, { id:'qbi', th:250, color:'#D97706' }, { id:'reps', th:750, color:'#2563EB' }].forEach(t => {
+    const pct = Math.min(100, (total / t.th) * 100);
+    document.getElementById('pf-' + t.id).style.width = pct.toFixed(1) + '%';
+    document.getElementById('td-' + t.id).textContent = total.toFixed(1) + ' / ' + t.th;
+    document.getElementById('tc-' + t.id).classList.toggle('met', total >= t.th);
+  });
+  const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const mh = Array(12).fill(0);
+  entries.forEach(e => { mh[new Date(e.date + 'T12:00:00').getMonth()] += e.hours; });
+  const isNow = activeYear === THIS_YEAR;
+  document.getElementById('months-grid').innerHTML = MN.map((m, i) =>
+    `<div class="month-cell ${mh[i] > 0 ? 'has-hours' : ''} ${isNow && i === cm ? 'current' : ''}"><div class="m-label">${m}</div><div class="m-hrs">${mh[i] > 0 ? mh[i].toFixed(1) : '–'}</div></div>`
+  ).join('');
+  const ct = {};
+  entries.forEach(e => { ct[e.cat] = (ct[e.cat] || 0) + e.hours; });
+  const sorted = Object.entries(ct).sort((a, b) => b[1] - a[1]);
+  const catEl = document.getElementById('cat-breakdown');
+  if (!sorted.length) { catEl.innerHTML = '<div style="padding:16px;font-size:13px;color:var(--text-hint)">Log activities to see breakdown</div>'; }
+  else {
+    const mx = sorted[0][1];
+    catEl.innerHTML = sorted.slice(0, 8).map(([cat, hrs]) => {
+      const co = (CATEGORIES.find(c => c.name === cat) || {}).color || '#888';
+      return `<div style="padding:10px 16px;border-bottom:0.5px solid var(--border)"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><div style="font-size:12px;color:var(--text-secondary);flex:1;padding-right:8px;line-height:1.3">${cat}</div><div style="font-size:13px;font-weight:600">${hrs.toFixed(1)}h</div></div><div style="height:3px;background:var(--surface);border-radius:2px"><div style="width:${((hrs/mx)*100).toFixed(0)}%;height:100%;background:${co};border-radius:2px"></div></div></div>`;
+    }).join('') + (sorted.length > 8 ? `<div style="padding:10px 16px;font-size:12px;color:var(--text-hint)">+${sorted.length - 8} more</div>` : '');
+  }
+  const ayl = document.getElementById('all-years-list');
+  if (years.length <= 1) { ayl.innerHTML = '<div style="font-size:13px;color:var(--text-hint);padding:4px 0 10px">Use the ‹ › arrows in the header to switch years.</div>'; }
+  else { ayl.innerHTML = [...years].reverse().map(yr => { const yh = totalHoursForYear(yr); const ye = getEntries(yr).length; return `<div class="yr-row ${yr === activeYear ? 'active-yr' : ''}" onclick="selectYear(${yr})"><div class="yr-badge">${yr}</div><div class="yr-info"><div class="yr-name">${yr}${yr === THIS_YEAR ? ' (current)' : ''}</div><div class="yr-sub">${ye} entr${ye === 1 ? 'y' : 'ies'}</div></div><div class="yr-hrs">${yh.toFixed(1)}h</div></div>`; }).join(''); }
+}
+
+// ── LOG ───────────────────────────────────────────────
+function setFilter(f, el) { currentFilter = f; document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active')); el.classList.add('active'); renderLog(); }
+function renderLog() {
+  const entries = getEntries(activeYear);
+  const now = new Date(); const td = now.toISOString().split('T')[0];
+  const wa = new Date(now); wa.setDate(wa.getDate() - 7);
+  const ms = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const fl = entries.filter(e => { if (currentFilter === 'today') return e.date === td; if (currentFilter === 'week') return e.date >= wa.toISOString().split('T')[0]; if (currentFilter === 'month') return e.date >= ms; return true; });
+  const el = document.getElementById('log-list');
+  if (!fl.length) { el.innerHTML = `<div class="empty-state"><h3>${activeYear === THIS_YEAR ? 'No entries yet' : 'No entries for ' + activeYear}</h3><p>${activeYear === THIS_YEAR ? 'Tap <strong>+ Log</strong> to record your first activity.' : 'Switch to the current year to add entries.'}</p></div>`; return; }
+  el.innerHTML = fl.map(e => { const co = (CATEGORIES.find(c => c.name === e.cat) || {}).color || '#888'; const ds = new Date(e.date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }); return `<div class="log-entry"><div class="entry-date">${ds}</div><div class="entry-cat" style="color:${co}">${e.cat}</div>${e.desc ? `<div class="entry-desc">${e.desc}</div>` : ''}<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px"><span class="entry-prop">${e.prop}</span><span class="entry-test-badge">${e.test}</span></div>${e.evidence ? `<div style="font-size:11px;color:var(--text-hint);margin-top:4px">📎 ${e.evidence}</div>` : ''}<div class="entry-hrs">${e.hours.toFixed(1)}<span>h</span></div>${activeYear === THIS_YEAR ? `<button class="del-btn" onclick="deleteEntry(${e.id})">✕</button>` : ''}</div>`; }).join('');
+}
+function deleteEntry(id) { if (!confirm('Delete this entry?')) return; const arr = getEntries(activeYear).filter(e => e.id !== id); setEntries(arr, activeYear); renderLog(); renderDashboard(); renderReports(); showToast('Entry deleted'); }
+
+// ── REPORTS ───────────────────────────────────────────
+function renderReports() {
+  const yr = parseInt(document.getElementById('report-year-sel').value) || activeYear;
+  const entries = getEntries(yr); const total = entries.reduce((s, e) => s + e.hours, 0);
+  const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const mh = Array(12).fill(0); entries.forEach(e => { mh[new Date(e.date + 'T12:00:00').getMonth()] += e.hours; });
+  const bm = mh.indexOf(Math.max(...mh));
+  document.getElementById('annual-title').textContent = 'Annual Summary — ' + yr;
+  document.getElementById('annual-stats').innerHTML = `<div class="stat-row"><div class="stat-label">Total hours logged</div><div class="stat-val">${total.toFixed(1)} hrs</div></div><div class="stat-row"><div class="stat-label">Total entries</div><div class="stat-val">${entries.length}</div></div><div class="stat-row"><div class="stat-label">Most active month</div><div class="stat-val">${total > 0 ? MN[bm] : '—'}</div></div><div class="stat-row"><div class="stat-label">Properties tracked</div><div class="stat-val">${[...new Set(entries.map(e => e.prop))].length}</div></div>`;
+  document.getElementById('test-status-list').innerHTML = [{ n:'Test 1 — 500 Hours', th:500 }, { n:'Test 3 — 100 Hours + Most', th:100 }, { n:'QBI Safe Harbor — 250 Hours', th:250 }, { n:'REPS — 750 Hours', th:750 }].map(t => { const met = total >= t.th; return `<div class="stat-row"><div class="stat-label" style="font-size:13px">${t.n}</div>${met ? '<span class="pill pill-green">✓ Met</span>' : `<span class="pill pill-amber">${(t.th - total).toFixed(1)} hrs to go</span>`}</div>`; }).join('');
+}
+
+function generateReport(type) {
+  const yr = parseInt(document.getElementById('report-year-sel').value) || activeYear;
+  const entries = getEntries(yr); const total = entries.reduce((s, e) => s + e.hours, 0);
+  const ML = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  currentReportType = type; let title, csv;
+  if (type === 'annual') { title = `Annual Tax Report — ${yr}`; csv = `STR MATERIAL PARTICIPATION — ANNUAL TAX REPORT ${yr}\nIRC Section 469 / Temp. Treas. Reg. 1.469-5T\n\nTotal Hours,${total.toFixed(2)}\nTotal Entries,${entries.length}\nTest 1 (500 hrs),${total >= 500 ? 'MET' : 'NOT MET — ' + (500 - total).toFixed(1) + ' hrs remaining'}\nTest 3 (100 hrs),${total >= 100 ? 'MET' : 'NOT MET'}\nQBI Safe Harbor,${total >= 250 ? 'MET' : 'NOT MET'}\nREPS (750 hrs),${total >= 750 ? 'MET' : 'NOT MET'}\n\nDate,Property,Category,Description,Hours,IRS Test,Evidence\n`; [...entries].sort((a, b) => a.date.localeCompare(b.date)).forEach(e => csv += `"${e.date}","${e.prop}","${e.cat}","${(e.desc || '').replace(/"/g, '""')}","${e.hours}","${e.test}","${(e.evidence || '').replace(/"/g, '""')}"\n`); }
+  else if (type === 'monthly') { title = `Monthly Summary — ${yr}`; csv = `STR MATERIAL PARTICIPATION — MONTHLY SUMMARY ${yr}\n\nMonth,Total Hours,Entries\n`; ML.forEach((m, i) => { const mo = entries.filter(e => new Date(e.date + 'T12:00:00').getMonth() === i); csv += `"${m}","${mo.reduce((s, e) => s + e.hours, 0).toFixed(2)}","${mo.length}"\n`; }); csv += `\n"TOTAL","${total.toFixed(2)}","${entries.length}"\n`; }
+  else if (type === 'audit') { title = `Audit Defense Report — ${yr}`; csv = `STR MATERIAL PARTICIPATION — IRS AUDIT DEFENSE LOG ${yr}\nIRC Section 469 | Temp. Treas. Reg. 1.469-5T\n\nDate,Day,Property,Category,Group,Description,Hours,IRS Test,Evidence\n`; [...entries].sort((a, b) => a.date.localeCompare(b.date)).forEach(e => { const day = new Date(e.date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'long' }); const g = (CATEGORIES.find(c => c.name === e.cat) || {}).group || ''; csv += `"${e.date}","${day}","${e.prop}","${e.cat}","${g}","${(e.desc || '').replace(/"/g, '""')}","${e.hours}","${e.test}","${(e.evidence || '').replace(/"/g, '""')}"\n`; }); }
+  else { title = `Category Summary — ${yr}`; const ct = {}; entries.forEach(e => { ct[e.cat] = (ct[e.cat] || 0) + e.hours; }); csv = `STR MATERIAL PARTICIPATION — HOURS BY CATEGORY ${yr}\n\nActivity Category,Group,Total Hours,% of Total\n`; Object.entries(ct).sort((a, b) => b[1] - a[1]).forEach(([cat, hrs]) => { const g = (CATEGORIES.find(c => c.name === cat) || {}).group || ''; csv += `"${cat}","${g}","${hrs.toFixed(2)}","${total > 0 ? ((hrs / total) * 100).toFixed(1) : 0}%"\n`; }); csv += `\n"TOTAL","","${total.toFixed(2)}","100%"\n`; }
+  currentReportCSV = csv;
+  document.getElementById('report-title').textContent = title;
+  document.getElementById('report-content').textContent = csv.slice(0, 2000) + (csv.length > 2000 ? '\n[… download for full report]' : '');
+  document.getElementById('report-modal').classList.add('open');
+}
+
+function downloadReport() {
+  const yr = parseInt(document.getElementById('report-year-sel').value) || activeYear;
+  const names = { annual:`STR_Annual_${yr}`, monthly:`STR_Monthly_${yr}`, audit:`STR_AuditDefense_${yr}`, category:`STR_Categories_${yr}` };
+  const blob = new Blob([currentReportCSV], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob); const a = document.createElement('a');
+  a.href = url; a.download = (names[currentReportType] || 'STR_Report') + '.csv'; a.click(); URL.revokeObjectURL(url); showToast('Downloading…');
+}
+function closeReport() { document.getElementById('report-modal').classList.remove('open'); }
+
+// ── REFERENCE ─────────────────────────────────────────
+function buildSevenTests() { document.getElementById('seven-tests').innerHTML = SEVEN_TESTS.map(t => `<div class="row-item" style="flex-direction:column;align-items:flex-start;gap:4px;padding:14px 16px"><div style="display:flex;align-items:center;gap:8px;width:100%"><div style="width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${t.num}</div><div style="font-size:14px;font-weight:600">${t.name}</div>${t.threshold ? `<span style="margin-left:auto;background:var(--amber-light);color:var(--amber);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600">${t.threshold}+ hrs</span>` : '<span style="margin-left:auto;font-size:11px;color:var(--text-hint)">Prior yrs</span>'}</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.5;padding-left:30px">${t.req}</div><div style="font-size:10px;color:var(--text-hint);padding-left:30px">${t.ref}</div></div>`).join(''); }
+function buildActivityRef() { document.getElementById('activity-ref').innerHTML = ACTIVITY_REF.map(a => `<div class="row-item" style="flex-direction:column;align-items:flex-start;gap:3px;padding:12px 16px"><div style="display:flex;align-items:center;gap:8px;width:100%"><div style="font-size:15px;flex-shrink:0">${a.counts ? '✅' : '❌'}</div><div style="font-size:13px;font-weight:${a.counts ? '500' : '400'};color:${a.counts ? 'var(--text-primary)' : 'var(--text-secondary)'};line-height:1.3">${a.activity}</div></div><div style="font-size:11px;color:var(--text-hint);padding-left:23px">${a.tip}</div></div>`).join(''); }
+
+// ── TOAST ─────────────────────────────────────────────
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+</script>
+</body>
+</html>
